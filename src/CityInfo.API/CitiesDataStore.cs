@@ -42,13 +42,13 @@ namespace CityInfo.API
                     {
                         new PointOfInterestDto()
                         {
-                            Id = 1,
+                            Id = 3,
                             Name = "Louvre Museum",
                             Description = "Landmark art museum with vast collection."
                         },
                         new PointOfInterestDto()
                         {
-                            Id = 2,
+                            Id = 4,
                             Name = "Arc de Triomphe",
                             Description = "Triumphal arch and national monument."
                         }
@@ -63,13 +63,13 @@ namespace CityInfo.API
                     {
                         new PointOfInterestDto()
                         {
-                            Id = 1,
+                            Id = 5,
                             Name = "Grand Place",
                             Description = "The Grote Markt with its town hall and numerous guild houses is the heart of the old town."
                         },
                         new PointOfInterestDto()
                         {
-                            Id = 2,
+                            Id = 6,
                             Name = "Cathedral of Our Lady",
                             Description = "Belgium's largest Gothic church."
                         }
