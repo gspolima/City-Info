@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using CityInfo.API.Services;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,6 +13,11 @@ namespace CityInfo.API
             services.AddMvc()
                     .AddMvcOptions(options =>
                         options.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter()));
+#if DEBUG
+            services.AddTransient<IMailService, LocalMailService>();
+#else
+            services.AddTransient<IMailService, CloudMailService>();
+#endif
 
             /* ---Change the default casing for properties in the JSON response.---
             //.AddJsonOptions(jsonOptions =>
@@ -30,8 +36,6 @@ namespace CityInfo.API
         {
             if (env.IsDevelopment())
                 app.UseDeveloperExceptionPage();
-            else
-                app.UseExceptionHandler();
 
             app.UseStatusCodePages();
             app.UseMvc();
