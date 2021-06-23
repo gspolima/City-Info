@@ -13,8 +13,8 @@
       "launchBrowser": true,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
-      }
-    },
+        }
+      },
     "CityInfo.API": {
       "commandName": "Project",
       "launchBrowser": true,

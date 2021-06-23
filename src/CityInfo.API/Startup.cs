@@ -24,8 +24,9 @@ namespace CityInfo.API
                     .AddMvcOptions(options =>
                         options.OutputFormatters.Add(new XmlDataContractSerializerOutputFormatter()));
 
+            var connectionString = Configuration.GetConnectionString("development");
             services.AddDbContext<CityInfoContext>(options =>
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+                options.UseSqlServer(connectionString));
 #if DEBUG
             services.AddTransient<IMailService, LocalMailService>();
 #else
