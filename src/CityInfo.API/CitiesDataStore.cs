@@ -3,6 +3,8 @@ using System.Collections.Generic;
 
 namespace CityInfo.API
 {
+
+    // Provisory source of data for the API. No longer needed.
     public class CitiesDataStore
     {
         public static CitiesDataStore Current { get; } = new CitiesDataStore();
