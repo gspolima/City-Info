@@ -26,7 +26,11 @@ namespace CityInfo.API
 
             var connectionString = Configuration.GetConnectionString("development");
             services.AddDbContext<CityInfoContext>(options =>
-                options.UseSqlServer(connectionString));
+                options
+                    .UseSqlServer(connectionString)
+                    .EnableSensitiveDataLogging());
+
+            services.AddScoped<ICityInfoRepository, CityInfoRepository>();
 #if DEBUG
             services.AddTransient<IMailService, LocalMailService>();
 #else
