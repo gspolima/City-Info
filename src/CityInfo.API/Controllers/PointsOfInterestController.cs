@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace CityInfo.API.Controllers
@@ -14,10 +15,15 @@ namespace CityInfo.API.Controllers
     {
         private readonly ILogger<PointsOfInterestController> logger;
         private readonly IMailService mailService;
-        public PointsOfInterestController(ILogger<PointsOfInterestController> logger, IMailService mailService)
+        private readonly ICityInfoRepository repo;
+        public PointsOfInterestController(
+            ILogger<PointsOfInterestController> logger,
+            IMailService mailService,
+            ICityInfoRepository repo)
         {
             this.logger = logger;
             this.mailService = mailService;
+            this.repo = repo;
         }
 
         [HttpGet]
@@ -25,16 +31,31 @@ namespace CityInfo.API.Controllers
         {
             try
             {
-                var city = CitiesDataStore.Current.Cities
-                    .SingleOrDefault(c => c.Id == cityId);
-
-                if (city == null)
+                if (!IsExistingCity(cityId))
                 {
-                    logger.LogInformation("The city could not be found");
+                    logger.LogInformation($"The city ID {cityId} could not be found");
                     return NotFound();
                 }
 
-                return Ok(city.PointsOfInterest);
+                var points = repo.GetPointsOfInterest(cityId);
+
+                if (points.Count() == 0)
+                    return NotFound("No points of interest found for this city");
+
+                var pointsToReturn = new List<PointOfInterestDto>();
+
+                foreach (var point in points)
+                {
+                    pointsToReturn.Add(
+                        new PointOfInterestDto()
+                        {
+                            Id = point.Id,
+                            Name = point.Name,
+                            Description = point.Description
+                        });
+                }
+
+                return Ok(pointsToReturn);
             }
             catch (Exception exception)
             {
@@ -48,19 +69,22 @@ namespace CityInfo.API.Controllers
         [HttpGet("{id}", Name = "GetPointOfInterestById")]
         public IActionResult GetPointOfInterestById(int cityId, int id)
         {
-            var city = CitiesDataStore.Current.Cities
-                .SingleOrDefault(c => c.Id == cityId);
-
-            if (city == null)
-                return NotFound("City does not exist");
-
-            var pointOfInterest = city.PointsOfInterest
-                .SingleOrDefault(p => p.Id == id);
-
-            if (pointOfInterest == null)
+            if (!IsExistingCity(cityId))
                 return NotFound();
 
-            return Ok(pointOfInterest);
+            var point = repo.GetPointOfInterestById(cityId, id);
+
+            if (point == null)
+                return NotFound();
+
+            var pointToReturn = new PointOfInterestDto()
+            {
+                Id = point.Id,
+                Name = point.Name,
+                Description = point.Description
+            };
+
+            return Ok(pointToReturn);
         }
 
         [HttpPost]
@@ -206,6 +230,11 @@ namespace CityInfo.API.Controllers
             }
 
             return NoContent();
+        }
+
+        public bool IsExistingCity(int cityId)
+        {
+            return repo.CityExists(cityId);
         }
     }
 }
