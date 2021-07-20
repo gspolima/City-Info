@@ -10,6 +10,8 @@ namespace CityInfo.API.Services
         int AddCity(City newCity);
         IEnumerable<PointOfInterest> GetPointsOfInterest(int cityId);
         PointOfInterest GetPointOfInterestById(int cityId, int id);
+        int AddPointOfInterest(int cityId, PointOfInterest newPoint);
+        int UpdatePointOfInterest(PointOfInterest pointOfInterest);
         bool CityExists(int cityId);
         bool CityExists(string name);
     }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using CityInfo.API.Entities;
 using CityInfo.API.Models;
 using CityInfo.API.Services;
 using Microsoft.AspNetCore.JsonPatch;
@@ -80,11 +81,14 @@ namespace CityInfo.API.Controllers
         public IActionResult CreatePointOfInterest(int cityId,
             [FromBody] PointOfInterestForCreationDto pointOfInterest)
         {
+            if (pointOfInterest == null)
+                return BadRequest();
+
             if (pointOfInterest.Name == pointOfInterest.Description)
             {
                 ModelState.AddModelError(
-                    "Description",
-                    "The description must be different from the name.");
+                "Description",
+                "The description must be different from the name.");
             }
 
             if (!ModelState.IsValid)
@@ -92,32 +96,21 @@ namespace CityInfo.API.Controllers
                 return BadRequest(ModelState);
             }
 
-            var city = CitiesDataStore.Current.Cities
-                .SingleOrDefault(c => c.Id == cityId);
+            var city = repo.CityExists(cityId);
 
-            if (city == null)
+            if (!city)
                 return NotFound("City does not exist");
-            if (pointOfInterest == null)
-                return BadRequest();
 
-            var maxPointOfInterestId = CitiesDataStore.Current.Cities
-                .SelectMany(c => c.PointsOfInterest)
-                .Max(p => p.Id);
+            var newPoint = mapper.Map<PointOfInterest>(pointOfInterest);
 
-            var newPointOfInterest = new PointOfInterestDto()
-            {
-                Id = ++maxPointOfInterestId,
-                Name = pointOfInterest.Name,
-                Description = pointOfInterest.Description
+            repo.AddPointOfInterest(cityId, newPoint);
 
-            };
-
-            city.PointsOfInterest.Add(newPointOfInterest);
+            var createdPoint = mapper.Map<PointOfInterestDto>(newPoint);
 
             return CreatedAtAction(
                 "GetPointOfInterestById",
-                new { cityId, id = newPointOfInterest.Id },
-                newPointOfInterest);
+                new { cityId, id = createdPoint.Id },
+                createdPoint);
         }
 
         [HttpPut("{id}")]
@@ -134,20 +127,19 @@ namespace CityInfo.API.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var city = CitiesDataStore.Current.Cities
-                .SingleOrDefault(c => c.Id == cityId);
+            var city = repo.CityExists(cityId);
 
-            if (city == null)
+            if (!city)
                 return NotFound("City does not exist");
 
-            var pointOfInterestFromStore = city.PointsOfInterest
-                .SingleOrDefault(p => p.Id == id);
+            var pointOfInterestEntity = repo.GetPointOfInterestById(cityId, id);
 
-            if (pointOfInterestFromStore == null)
+            if (pointOfInterestEntity == null)
                 return NotFound();
 
-            pointOfInterestFromStore.Name = pointOfInterest.Name;
-            pointOfInterestFromStore.Description = pointOfInterest.Description;
+            mapper.Map(pointOfInterest, pointOfInterestEntity);
+
+            repo.UpdatePointOfInterest(pointOfInterestEntity);
 
             return NoContent();
         }

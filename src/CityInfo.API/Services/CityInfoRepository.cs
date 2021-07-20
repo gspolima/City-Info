@@ -70,6 +70,15 @@ namespace CityInfo.API.Services
             return affectedRows;
         }
 
+        public int AddPointOfInterest(int cityId, PointOfInterest newPoint)
+        {
+            var city = GetCityById(cityId, includePointsOfInterest: false);
+
+            city.PointsOfInterest.Add(newPoint);
+            var affectedRows = context.SaveChanges();
+            return affectedRows;
+        }
+
         public bool CityExists(int cityId)
         {
             return context.Cities.Any(c => c.Id == cityId);
@@ -82,6 +91,13 @@ namespace CityInfo.API.Services
             c.Name.ToUpperInvariant() == name.ToUpperInvariant());
 
             return exists;
+        }
+
+        public int UpdatePointOfInterest(PointOfInterest pointOfInterest)
+        {
+            context.Entry(pointOfInterest).State = EntityState.Modified;
+            var affectedRows = context.SaveChanges();
+            return affectedRows;
         }
     }
 }
