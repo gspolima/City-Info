@@ -1,4 +1,5 @@
-﻿using CityInfo.API.Contexts;
+﻿using AutoMapper;
+using CityInfo.API.Contexts;
 using CityInfo.API.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -6,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using System;
 
 namespace CityInfo.API
 {
@@ -31,6 +33,7 @@ namespace CityInfo.API
                     .EnableSensitiveDataLogging());
 
             services.AddScoped<ICityInfoRepository, CityInfoRepository>();
+            services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 #if DEBUG
             services.AddTransient<IMailService, LocalMailService>();
 #else

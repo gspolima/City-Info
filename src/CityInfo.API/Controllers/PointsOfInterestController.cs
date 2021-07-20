@@ -1,4 +1,5 @@
-﻿using CityInfo.API.Models;
+﻿using AutoMapper;
+using CityInfo.API.Models;
 using CityInfo.API.Services;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
@@ -16,14 +17,22 @@ namespace CityInfo.API.Controllers
         private readonly ILogger<PointsOfInterestController> logger;
         private readonly IMailService mailService;
         private readonly ICityInfoRepository repo;
+        private readonly IMapper mapper;
+
         public PointsOfInterestController(
             ILogger<PointsOfInterestController> logger,
             IMailService mailService,
-            ICityInfoRepository repo)
+            ICityInfoRepository repo,
+            IMapper mapper)
         {
-            this.logger = logger;
-            this.mailService = mailService;
-            this.repo = repo;
+            this.logger = logger ?? throw new
+                ArgumentNullException(nameof(logger));
+            this.mailService = mailService ?? throw new
+                ArgumentNullException(nameof(mailService));
+            this.repo = repo ?? throw new
+                ArgumentNullException(nameof(repo));
+            this.mapper = mapper ?? throw new
+                ArgumentNullException(nameof(mapper));
         }
 
         [HttpGet]
@@ -42,25 +51,12 @@ namespace CityInfo.API.Controllers
                 if (points.Count() == 0)
                     return NotFound("No points of interest found for this city");
 
-                var pointsToReturn = new List<PointOfInterestDto>();
-
-                foreach (var point in points)
-                {
-                    pointsToReturn.Add(
-                        new PointOfInterestDto()
-                        {
-                            Id = point.Id,
-                            Name = point.Name,
-                            Description = point.Description
-                        });
-                }
-
-                return Ok(pointsToReturn);
+                return Ok(mapper.Map<IEnumerable<PointOfInterestDto>>(points));
             }
             catch (Exception exception)
             {
                 logger.LogCritical(
-                    $"Exception catched when getting the points of interest for city {cityId}. {exception.Message}");
+                    $"Exception thrown when getting the points of interest for city ID {cityId}. [{exception.Message}]");
                 return StatusCode(500, "An error has ocurred when processing your request.");
             }
 
@@ -77,14 +73,7 @@ namespace CityInfo.API.Controllers
             if (point == null)
                 return NotFound();
 
-            var pointToReturn = new PointOfInterestDto()
-            {
-                Id = point.Id,
-                Name = point.Name,
-                Description = point.Description
-            };
-
-            return Ok(pointToReturn);
+            return Ok(mapper.Map<PointOfInterestDto>(point));
         }
 
         [HttpPost]

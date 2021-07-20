@@ -1,6 +1,7 @@
 ﻿using CityInfo.API.Contexts;
 using CityInfo.API.Entities;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,7 +12,7 @@ namespace CityInfo.API.Services
         private readonly CityInfoContext context;
         public CityInfoRepository(CityInfoContext context)
         {
-            this.context = context;
+            this.context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
         public IEnumerable<City> GetCities()
@@ -62,10 +63,25 @@ namespace CityInfo.API.Services
 
             return pointOfInterest;
         }
+        public int AddCity(City newCity)
+        {
+            context.Add(newCity);
+            var affectedRows = context.SaveChanges();
+            return affectedRows;
+        }
 
         public bool CityExists(int cityId)
         {
             return context.Cities.Any(c => c.Id == cityId);
+        }
+
+        public bool CityExists(string name)
+        {
+            var exists = context.Cities
+                .Any(c =>
+            c.Name.ToUpperInvariant() == name.ToUpperInvariant());
+
+            return exists;
         }
     }
 }

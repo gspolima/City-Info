@@ -1,6 +1,9 @@
-﻿using CityInfo.API.Models;
+﻿using AutoMapper;
+using CityInfo.API.Entities;
+using CityInfo.API.Models;
 using CityInfo.API.Services;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 
 namespace CityInfo.API.Controllers
@@ -10,32 +13,25 @@ namespace CityInfo.API.Controllers
     public class CitiesController : ControllerBase
     {
         private readonly ICityInfoRepository repo;
+        private readonly IMapper mapper;
 
-        public CitiesController(ICityInfoRepository repo)
+        public CitiesController(ICityInfoRepository repo, IMapper mapper)
         {
-            this.repo = repo;
+            this.repo = repo ?? throw new
+                ArgumentNullException(nameof(repo));
+            this.mapper = mapper ?? throw new
+                ArgumentNullException(nameof(mapper));
         }
 
         [HttpGet]
         public IActionResult GetCities()
         {
             var cities = repo.GetCities();
-            var citiesToReturn = new List<CityWithoutPointsOfInterest>();
-            foreach (var city in cities)
-            {
-                citiesToReturn.Add(
-                    new CityWithoutPointsOfInterest()
-                    {
-                        Id = city.Id,
-                        Name = city.Name,
-                        Description = city.Description
-                    });
-            }
 
-            return Ok(citiesToReturn);
+            return Ok(mapper.Map<IEnumerable<CityWithoutPointsOfInterestDto>>(cities));
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id}", Name = "GetCityById")]
         public IActionResult GetCityById(int id, bool includePointsOfInterest = false)
         {
             var city = repo.GetCityById(id, includePointsOfInterest);
@@ -44,36 +40,38 @@ namespace CityInfo.API.Controllers
                 return NotFound();
 
             if (includePointsOfInterest)
+                return Ok(mapper.Map<CityDto>(city));
+
+            return Ok(mapper.Map<CityWithoutPointsOfInterestDto>(city));
+        }
+
+        [HttpPost]
+        public IActionResult AddNewCity([FromBody] CityForCreationDto city)
+        {
+            if (city == null)
+                return BadRequest();
+
+            var cityExists = repo.CityExists(city.Name);
+
+            if (cityExists)
+                return BadRequest("City exists already.");
+
+            var newCity = new City()
             {
-                var cityWithPoints = new CityDto()
-                {
-                    Id = city.Id,
-                    Name = city.Name,
-                    Description = city.Description
-                };
-
-                foreach (var point in city.PointsOfInterest)
-                {
-                    cityWithPoints.PointsOfInterest.Add(
-                        new PointOfInterestDto()
-                        {
-                            Id = point.Id,
-                            Name = point.Name,
-                            Description = point.Description
-                        });
-                }
-
-                return Ok(cityWithPoints);
-            }
-
-            var cityWithoutPoints = new CityWithoutPointsOfInterest()
-            {
-                Id = city.Id,
                 Name = city.Name,
                 Description = city.Description
             };
 
-            return Ok(cityWithoutPoints);
+            repo.AddCity(newCity);
+
+            var cityDto = new CityDto()
+            {
+                Id = newCity.Id,
+                Name = newCity.Name,
+                Description = newCity.Description
+            };
+
+            return CreatedAtAction("GetCityById", new { id = cityDto.Id, includePointsOfInterest = false }, cityDto);
         }
     }
 }
