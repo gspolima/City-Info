@@ -146,27 +146,22 @@ namespace CityInfo.API.Controllers
 
         [HttpPatch("{id}")]
         public IActionResult PatchPointOfInterest(int cityId, int id,
-            JsonPatchDocument<PointOfInterestForUpdateDto> patchDocument)
+            JsonPatchDocument<PointOfInterestForUpdateDto> jsonPatchDoc)
         {
-            var city = CitiesDataStore.Current.Cities
-                .SingleOrDefault(c => c.Id == cityId);
+            var city = repo.CityExists(cityId);
 
-            if (city == null)
+            if (!city)
                 return NotFound("City does not exist");
 
-            var pointOfInterestFromStore = city.PointsOfInterest
-                .SingleOrDefault(p => p.Id == id);
+            var pointOfInterestEntity = repo.GetPointOfInterestById(cityId, id);
 
-            if (pointOfInterestFromStore == null)
+            if (pointOfInterestEntity == null)
                 return NotFound();
 
-            var pointOfInterestToPatch = new PointOfInterestForUpdateDto()
-            {
-                Name = pointOfInterestFromStore.Name,
-                Description = pointOfInterestFromStore.Description
-            };
+            var pointOfInterestToPatch = mapper
+                .Map<PointOfInterestForUpdateDto>(pointOfInterestEntity);
 
-            patchDocument.ApplyTo(pointOfInterestToPatch, ModelState);
+            jsonPatchDoc.ApplyTo(pointOfInterestToPatch, ModelState);
 
             if (!ModelState.IsValid)
                 return BadRequest();
@@ -181,8 +176,9 @@ namespace CityInfo.API.Controllers
             if (!TryValidateModel(pointOfInterestToPatch))
                 return BadRequest(ModelState);
 
-            pointOfInterestFromStore.Name = pointOfInterestToPatch.Name;
-            pointOfInterestFromStore.Description = pointOfInterestToPatch.Description;
+            mapper.Map(pointOfInterestToPatch, pointOfInterestEntity);
+
+            repo.UpdatePointOfInterest(pointOfInterestEntity);
 
             return NoContent();
         }
@@ -190,24 +186,23 @@ namespace CityInfo.API.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeletePointOfInterest(int cityId, int id)
         {
-            var city = CitiesDataStore.Current.Cities
-                .SingleOrDefault(c => c.Id == cityId);
+            var city = repo.CityExists(cityId);
 
-            if (city == null)
+            if (!city)
                 return NotFound("City does not exist");
 
-            var pointOfInterest = city.PointsOfInterest
-                .SingleOrDefault(p => p.Id == id);
+            var pointOfInterest = repo.GetPointOfInterestById(cityId, id);
 
             if (pointOfInterest == null)
                 return NotFound();
 
-            var success = city.PointsOfInterest.Remove(pointOfInterest);
-            if (success)
+            var deletedRows = repo.DeletePointOfInterest(pointOfInterest);
+            if (deletedRows == 1)
             {
                 mailService.Send(
                     "Point of Interest deleted",
-                    "A point of interest was just deleted via API");
+                    $"Point of interest {pointOfInterest.Name} with ID " +
+                    $"{pointOfInterest.Id} was just deleted via API");
             }
 
             return NoContent();

@@ -24,23 +24,21 @@ namespace CityInfo.API.Services
             return cities;
         }
 
+        public City GetCityById(int id)
+        {
+            var city = context.Cities
+                    .Where(c => c.Id == id)
+                    .FirstOrDefault();
+
+            return city;
+        }
+
         public City GetCityById(int id, bool includePointsOfInterest)
         {
-            City city;
-
-            if (includePointsOfInterest)
-            {
-                city = context.Cities
-                    .Include(c => c.PointsOfInterest)
-                    .Where(c => c.Id == id)
-                    .FirstOrDefault();
-            }
-            else
-            {
-                city = context.Cities
-                    .Where(c => c.Id == id)
-                    .FirstOrDefault();
-            }
+            var city = context.Cities
+                .Include(c => c.PointsOfInterest)
+                .Where(c => c.Id == id)
+                .FirstOrDefault();
 
             return city;
         }
@@ -79,6 +77,32 @@ namespace CityInfo.API.Services
             return affectedRows;
         }
 
+
+        public int UpdateCity(City city)
+        {
+            context.Entry(city).State = EntityState.Modified;
+            return context.SaveChanges();
+        }
+
+        public int UpdatePointOfInterest(PointOfInterest pointOfInterest)
+        {
+            context.Entry(pointOfInterest).State = EntityState.Modified;
+            var affectedRows = context.SaveChanges();
+            return affectedRows;
+        }
+
+        public int DeleteCity(City city)
+        {
+            context.Cities.Remove(city);
+            return context.SaveChanges();
+        }
+
+        public int DeletePointOfInterest(PointOfInterest pointOfInterest)
+        {
+            context.PointsOfInterest.Remove(pointOfInterest);
+            return context.SaveChanges();
+        }
+
         public bool CityExists(int cityId)
         {
             return context.Cities.Any(c => c.Id == cityId);
@@ -91,13 +115,6 @@ namespace CityInfo.API.Services
             c.Name.ToUpperInvariant() == name.ToUpperInvariant());
 
             return exists;
-        }
-
-        public int UpdatePointOfInterest(PointOfInterest pointOfInterest)
-        {
-            context.Entry(pointOfInterest).State = EntityState.Modified;
-            var affectedRows = context.SaveChanges();
-            return affectedRows;
         }
     }
 }

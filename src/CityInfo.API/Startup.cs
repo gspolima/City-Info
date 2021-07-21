@@ -30,7 +30,8 @@ namespace CityInfo.API
             services.AddDbContext<CityInfoContext>(options =>
                 options
                     .UseSqlServer(connectionString)
-                    .EnableSensitiveDataLogging());
+                    .EnableSensitiveDataLogging()
+                    .UseQueryTrackingBehavior(QueryTrackingBehavior.NoTracking));
 
             services.AddScoped<ICityInfoRepository, CityInfoRepository>();
             services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
